@@ -1,0 +1,19 @@
+# 🛑 ไม่ต้อง commit node_modules เพราะสามารถติดตั้งใหม่ได้จาก package.json
+node_modules/
+
+# 🛑 ลบไฟล์ log ที่ถูกสร้างขึ้นระหว่างรันโปรแกรม
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 🛑 ไม่ต้อง commit package-lock.json (ถ้าใช้ npm install ทุกเครื่องจะโหลด dependencies ตาม package.json)
+package-lock.json
+
+# 🛑 ลบไฟล์ที่เกี่ยวข้องกับระบบปฏิบัติการ
+.DS_Store
+Thumbs.db
+
+# 🛑 ถ้าใช้ Firebase Emulator ให้ ignore โฟลเดอร์นี้
+firebase-debug.log
+.firebaserc
