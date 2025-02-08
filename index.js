@@ -108,7 +108,7 @@ function isWithinBusinessHours() {
   }
   // วันจันทร์-เสาร์ (9:00-24:00)
   else if (day >= 1 && day <= 6) {
-    return currentTime >= 9 && currentTime < 24;
+    return currentTime >= 9 && currentTime < 18;
   }
   return false;
 }
@@ -153,7 +153,7 @@ app.post("/webhook", async (req, res) => {
       const userData = snapshot.val() || {};
       const lastFallbackTime = userData.lastFallbackTime || 0;
       const currentTime = Date.now();
-      const COOLDOWN_PERIOD = 1800000;
+      const COOLDOWN_PERIOD = 3600000;
 
       if (currentTime - lastFallbackTime >= COOLDOWN_PERIOD) {
         await userRef.update({
@@ -172,7 +172,6 @@ app.post("/webhook", async (req, res) => {
         }
         console.log(`✅ Updated fallback time for user: ${userId}`);
       } else {
-        agent.add("กรุณารอสักครู่...");
         console.log(`ℹ️ User ${userId} is in cooldown period`);
       }
     } catch (error) {
