@@ -81,6 +81,38 @@ try {
   process.exit(1);
 }
 
+// ฟังก์ชันสำหรับแปลงเวลาเป็นเวลาประเทศไทย
+function getThaiTime() {
+  const now = new Date();
+  return new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+}
+
+// เพิ่มฟังก์ชันตรวจสอบเวลาทำการ (เวลาไทย)
+function isWithinBusinessHours() {
+  const thaiTime = getThaiTime();
+  const day = thaiTime.getDay(); // 0 = อาทิตย์, 1-6 = จันทร์-เสาร์
+  const hour = thaiTime.getHours();
+  const minutes = thaiTime.getMinutes();
+  const currentTime = hour + minutes / 60;
+
+  console.log(
+    `🕒 Current Thai time: ${thaiTime.toLocaleString("th-TH", {
+      timeZone: "Asia/Bangkok",
+    })}`
+  );
+  console.log(`📅 Day: ${day}, Hour: ${hour}, Minutes: ${minutes}`);
+
+  // วันอาทิตย์ (9:00-18:00)
+  if (day === 0) {
+    return currentTime >= 9 && currentTime < 18;
+  }
+  // วันจันทร์-เสาร์ (9:00-24:00)
+  else if (day >= 1 && day <= 6) {
+    return currentTime >= 9 && currentTime < 24;
+  }
+  return false;
+}
+
 // ตั้งค่า Express
 const app = express();
 app.use(express.json());
@@ -88,9 +120,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Route สำหรับตรวจสอบสถานะเซิร์ฟเวอร์
 app.get("/", (req, res) => {
+  const thaiTime = getThaiTime();
   res.send({
     status: "online",
-    timestamp: new Date().toISOString(),
+    timestamp: thaiTime.toISOString(),
+    thai_time: thaiTime.toLocaleString("th-TH", { timeZone: "Asia/Bangkok" }),
     service: "Dialogflow Webhook",
     firebase_status: db ? "initialized" : "not_initialized",
   });
@@ -98,8 +132,10 @@ app.get("/", (req, res) => {
 
 // Webhook endpoint สำหรับ Dialogflow
 app.post("/webhook", async (req, res) => {
+  const thaiTime = getThaiTime();
   console.log("🔗 Received webhook request:", {
-    timestamp: new Date().toISOString(),
+    timestamp: thaiTime.toISOString(),
+    thai_time: thaiTime.toLocaleString("th-TH", { timeZone: "Asia/Bangkok" }),
     body: JSON.stringify(req.body, null, 2),
   });
 
@@ -122,10 +158,18 @@ app.post("/webhook", async (req, res) => {
       if (currentTime - lastFallbackTime >= COOLDOWN_PERIOD) {
         await userRef.update({
           lastFallbackTime: currentTime,
-          lastUpdated: new Date().toISOString(),
-          userId: userId, // เพิ่ม userId เพื่อการติดตาม
+          lastUpdated: getThaiTime().toISOString(),
+          userId: userId,
         });
-        agent.add("รบกวนรอเจ้าหน้าที่ฝ่ายบริการตอบกลับอีกครั้ง");
+
+        // ตรวจสอบเวลาทำการและส่งข้อความตามเงื่อนไข
+        if (isWithinBusinessHours()) {
+          agent.add("รบกวนคุณลูกค้ารอเจ้าหน้าที่ฝ่ายบริการตอบกลับอีกครั้งนะคะ");
+        } else {
+          agent.add(
+            "รบกวนคุณลูกค้ารอเจ้าหน้าที่ฝ่ายบริการตอบกลับอีกครั้งนะคะ ทั้งนี้เจ้าหน้าที่ฝ่ายบริการทำการจันทร์-เสาร์ เวลา 09.00-00.00 น. และวันอาทิตย์ทำการเวลา 09.00-18.00 น. ค่ะ"
+          );
+        }
         console.log(`✅ Updated fallback time for user: ${userId}`);
       } else {
         agent.add("กรุณารอสักครู่...");
@@ -151,6 +195,7 @@ app.post("/webhook", async (req, res) => {
 // เริ่มต้น server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
+  const thaiTime = getThaiTime();
   console.log(`
 🚀 Server is running
 📋 Details:
@@ -158,7 +203,8 @@ app.listen(port, () => {
 - Environment: ${process.env.NODE_ENV || "development"}
 - Firebase Project: ${process.env.FIREBASE_PROJECT_ID}
 - Database URL: ${process.env.FIREBASE_DATABASE_URL}
-- Time: ${new Date().toISOString()}
+- Server Time: ${new Date().toISOString()}
+- Thai Time: ${thaiTime.toLocaleString("th-TH", { timeZone: "Asia/Bangkok" })}
   `);
 });
 
