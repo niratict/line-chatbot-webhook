@@ -172,6 +172,7 @@ app.post("/webhook", async (req, res) => {
         }
         console.log(`✅ Updated fallback time for user: ${userId}`);
       } else {
+        agent.add("");
         console.log(`ℹ️ User ${userId} is in cooldown period`);
       }
     } catch (error) {

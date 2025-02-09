@@ -14,6 +14,10 @@ package-lock.json
 .DS_Store
 Thumbs.db
 
+# Environment files
+.env
+.env.*.local
+
 # 🛑 ถ้าใช้ Firebase Emulator ให้ ignore โฟลเดอร์นี้
 firebase-debug.log
 .firebaserc
